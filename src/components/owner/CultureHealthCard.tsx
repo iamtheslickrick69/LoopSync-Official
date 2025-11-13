@@ -28,12 +28,6 @@ export function CultureHealthCard() {
     return () => clearInterval(timer);
   }, [current]);
 
-  const getColor = (score: number) => {
-    if (score >= 71) return 'from-green-500 to-green-600';
-    if (score >= 41) return 'from-yellow-500 to-yellow-600';
-    return 'from-red-500 to-red-600';
-  };
-
   const getTextColor = (score: number) => {
     if (score >= 71) return 'text-green-600';
     if (score >= 41) return 'text-yellow-600';

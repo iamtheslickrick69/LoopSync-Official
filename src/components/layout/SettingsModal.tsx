@@ -14,7 +14,7 @@ interface SettingsModalProps {
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { claudeApiKey, setClaudeApiKey } = useSettingsStore();
   const [apiKey, setApiKey] = useState(claudeApiKey || '');
-  const [isTestin, setIsTesting] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
 
   useEffect(() => {
