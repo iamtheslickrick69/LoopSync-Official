@@ -1,6 +1,6 @@
 export type PrivacyLevel = 'anonymous' | 'group' | 'department' | 'identified';
 export type UrgencyLevel = 'general' | 'priority' | 'critical';
-export type FeedbackStatus = 'unread' | 'acknowledged' | 'in-progress' | 'resolved';
+export type FeedbackStatus = 'submitted' | 'unread' | 'acknowledged' | 'in-progress' | 'resolved';
 export type SentimentScore = -1 | -0.5 | 0 | 0.5 | 1;
 
 export interface Tag {

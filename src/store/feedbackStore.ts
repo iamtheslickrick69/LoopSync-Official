@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Feedback, FeedbackFilters } from '../types/feedback';
 import { mockFeedback } from '../utils/mockData';
+import { analyticsService } from '../services/analyticsService';
 
 interface FeedbackStore {
   feedback: Feedback[];

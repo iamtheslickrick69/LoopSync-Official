@@ -19,7 +19,52 @@
 }
 
 @layer components {
-  /* Glass morphism utility classes */
+  /* === GRADIENT THEME BACKGROUNDS === */
+
+  /* Blue gradient theme for home/landing page - Cool, professional, inviting */
+  .theme-blue-gradient {
+    background: linear-gradient(135deg,
+      #dbeafe 0%,    /* primary-100 */
+      #bfdbfe 15%,   /* primary-200 */
+      #93c5fd 35%,   /* primary-300 */
+      #60a5fa 55%,   /* primary-400 */
+      #3b82f6 75%,   /* primary-500 */
+      #2563eb 100%   /* primary-600 */
+    );
+    background-size: 200% 200%;
+    animation: gradient-xy 8s ease infinite;
+  }
+
+  /* Yellow/warm gradient theme for employee portal - Warm, cozy, welcoming */
+  .theme-yellow-gradient {
+    background: linear-gradient(135deg,
+      #fef9c3 0%,    /* secondary-100 */
+      #fef08a 15%,   /* secondary-200 */
+      #fde047 35%,   /* secondary-300 */
+      #facc15 55%,   /* secondary-400 */
+      #eab308 75%,   /* secondary-500 */
+      #f59e0b 100%   /* amber-500 for warmth */
+    );
+    background-size: 200% 200%;
+    animation: gradient-xy 8s ease infinite;
+  }
+
+  /* Red gradient theme for executive portal - Bold, powerful, authoritative */
+  .theme-red-gradient {
+    background: linear-gradient(135deg,
+      #fee2e2 0%,    /* executive-100 */
+      #fecaca 15%,   /* executive-200 */
+      #fca5a5 35%,   /* executive-300 */
+      #f87171 55%,   /* executive-400 */
+      #ef4444 75%,   /* executive-500 */
+      #dc2626 100%   /* executive-600 */
+    );
+    background-size: 200% 200%;
+    animation: gradient-xy 8s ease infinite;
+  }
+
+  /* === GLASS MORPHISM VARIANTS === */
+
   .glass {
     @apply bg-white/70 backdrop-blur-md border border-white/30;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
@@ -35,12 +80,39 @@
     box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.1);
   }
 
-  /* Hover effects */
-  .glass-hover {
-    @apply transition-all duration-200 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02];
+  .glass-ultra {
+    @apply bg-white/90 backdrop-blur-3xl border border-white/50;
+    box-shadow: 0 12px 48px 0 rgba(31, 38, 135, 0.25);
   }
 
-  /* Button styles */
+  /* Themed glass variants */
+  .glass-blue {
+    @apply bg-primary-50/80 backdrop-blur-lg border border-primary-200/40;
+    box-shadow: 0 8px 32px 0 rgba(59, 130, 246, 0.2);
+  }
+
+  .glass-yellow {
+    @apply bg-secondary-50/80 backdrop-blur-lg border border-secondary-200/40;
+    box-shadow: 0 8px 32px 0 rgba(234, 179, 8, 0.15);
+  }
+
+  .glass-red {
+    @apply bg-executive-50/80 backdrop-blur-lg border border-executive-200/40;
+    box-shadow: 0 8px 32px 0 rgba(239, 68, 68, 0.2);
+  }
+
+  /* === HOVER EFFECTS === */
+
+  .glass-hover {
+    @apply transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:scale-[1.02];
+  }
+
+  .glass-hover-intense {
+    @apply transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.03] hover:bg-white/85;
+  }
+
+  /* === BUTTON STYLES === */
+
   .btn-primary {
     @apply bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold px-6 py-3 rounded-full;
     @apply hover:from-primary-600 hover:to-primary-700 active:scale-95 transition-all duration-200;
@@ -52,7 +124,90 @@
     @apply hover:bg-white/90 active:scale-95 transition-all duration-200;
   }
 
-  /* Scrollbar styling */
+  .btn-yellow {
+    @apply bg-gradient-to-r from-secondary-400 to-secondary-500 text-white font-semibold px-6 py-3 rounded-full;
+    @apply hover:from-secondary-500 hover:to-secondary-600 active:scale-95 transition-all duration-200;
+    @apply shadow-lg hover:shadow-xl;
+  }
+
+  .btn-red {
+    @apply bg-gradient-to-r from-executive-500 to-executive-600 text-white font-semibold px-6 py-3 rounded-full;
+    @apply hover:from-executive-600 hover:to-executive-700 active:scale-95 transition-all duration-200;
+    @apply shadow-lg hover:shadow-xl;
+  }
+
+  /* === AI ORB STYLES === */
+
+  .ai-orb {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg,
+      #4F46E5 0%,   /* orb-blue */
+      #9333EA 25%,  /* orb-purple */
+      #EC4899 50%,  /* orb-pink */
+      #06B6D4 75%,  /* orb-cyan */
+      #4F46E5 100%  /* back to blue */
+    );
+    background-size: 300% 300%;
+    animation: gradient-xy 6s ease infinite, orb-pulse 4s ease-in-out infinite, orb-float 6s ease-in-out infinite;
+    box-shadow:
+      0 0 40px rgba(99, 102, 241, 0.6),
+      0 0 80px rgba(147, 51, 234, 0.4),
+      inset 0 0 40px rgba(236, 72, 153, 0.3);
+  }
+
+  .ai-orb::before {
+    content: '';
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%,
+      rgba(255, 255, 255, 0.8) 0%,
+      rgba(255, 255, 255, 0.3) 30%,
+      transparent 70%
+    );
+    animation: orb-float 4s ease-in-out infinite;
+  }
+
+  .ai-orb::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 50%;
+    background: linear-gradient(135deg,
+      rgba(99, 102, 241, 0.4),
+      rgba(147, 51, 234, 0.4),
+      rgba(236, 72, 153, 0.4)
+    );
+    filter: blur(10px);
+    z-index: -1;
+    animation: rotate-slow 20s linear infinite;
+  }
+
+  /* Small orb variant for compact spaces */
+  .ai-orb-small {
+    width: 60px;
+    height: 60px;
+    @apply ai-orb;
+  }
+
+  /* Large orb variant for hero sections */
+  .ai-orb-large {
+    width: 200px;
+    height: 200px;
+    @apply ai-orb;
+  }
+
+  /* === SCROLLBAR STYLING === */
+
   .custom-scrollbar::-webkit-scrollbar {
     @apply w-2;
   }
@@ -64,10 +219,41 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     @apply bg-primary-300/50 rounded-full hover:bg-primary-400/70;
   }
+
+  .custom-scrollbar-yellow::-webkit-scrollbar-thumb {
+    @apply bg-secondary-300/50 rounded-full hover:bg-secondary-400/70;
+  }
+
+  .custom-scrollbar-red::-webkit-scrollbar-thumb {
+    @apply bg-executive-300/50 rounded-full hover:bg-executive-400/70;
+  }
+
+  /* === PREMIUM CARD STYLES === */
+
+  .premium-card {
+    @apply glass-strong rounded-2xl p-6 transition-all duration-300;
+    @apply hover:shadow-2xl hover:-translate-y-1;
+  }
+
+  .premium-card-blue {
+    @apply glass-blue rounded-2xl p-6 transition-all duration-300;
+    @apply hover:shadow-2xl hover:-translate-y-1 hover:border-primary-300/60;
+  }
+
+  .premium-card-yellow {
+    @apply glass-yellow rounded-2xl p-6 transition-all duration-300;
+    @apply hover:shadow-2xl hover:-translate-y-1 hover:border-secondary-300/60;
+  }
+
+  .premium-card-red {
+    @apply glass-red rounded-2xl p-6 transition-all duration-300;
+    @apply hover:shadow-2xl hover:-translate-y-1 hover:border-executive-300/60;
+  }
 }
 
 @layer utilities {
-  /* Animation delays */
+  /* === ANIMATION DELAYS === */
+
   .animation-delay-100 {
     animation-delay: 100ms;
   }
@@ -84,8 +270,56 @@
     animation-delay: 400ms;
   }
 
-  /* Text gradients */
+  .animation-delay-500 {
+    animation-delay: 500ms;
+  }
+
+  .animation-delay-700 {
+    animation-delay: 700ms;
+  }
+
+  .animation-delay-1000 {
+    animation-delay: 1000ms;
+  }
+
+  /* === TEXT GRADIENTS === */
+
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-400;
+  }
+
+  .text-gradient-blue {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #2563eb, #60a5fa, #3b82f6);
+  }
+
+  .text-gradient-yellow {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #ca8a04, #facc15, #eab308);
+  }
+
+  .text-gradient-red {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #dc2626, #f87171, #ef4444);
+  }
+
+  .text-gradient-orb {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #4F46E5, #9333EA, #EC4899);
+    background-size: 200%;
+    animation: gradient-x 3s ease infinite;
+  }
+
+  /* === SHIMMER EFFECT === */
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
   }
 }

@@ -8,7 +8,7 @@ import { Button } from '../shared/Button';
 import { useFeedbackStore } from '../../store/feedbackStore';
 
 export function FeedbackStream() {
-  const { getFilteredFeedback, updateFeedbackStatus, setFilters } = useFeedbackStore();
+  const { getFilteredFeedback, setFilters, updateFeedbackStatus } = useFeedbackStore();
   const [showFilters, setShowFilters] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
