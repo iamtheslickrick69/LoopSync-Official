@@ -142,7 +142,7 @@ Remember: Your goal is to make employees feel heard, supported, and empowered. Y
         let fullResponse = '';
 
         const stream = await this.client.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-5-20250929',
           max_tokens: 2048,
           system: this.getCoroSystemPrompt(),
           messages: messages.map(m => ({
@@ -166,7 +166,7 @@ Remember: Your goal is to make employees feel heard, supported, and empowered. Y
       } else {
         // Non-streaming mode
         const response = await this.client.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-5-20250929',
           max_tokens: 2048,
           system: this.getCoroSystemPrompt(),
           messages: messages.map(m => ({
@@ -193,7 +193,7 @@ Remember: Your goal is to make employees feel heard, supported, and empowered. Y
 
     try {
       const response = await this.client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5-20250929',
         max_tokens: 50,
         messages: [{ role: 'user', content: 'Hi' }],
       });

@@ -275,7 +275,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no code blocks.`;
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-5-20250929',
           max_tokens: 2000,
           system: systemPrompt,
           messages: [
