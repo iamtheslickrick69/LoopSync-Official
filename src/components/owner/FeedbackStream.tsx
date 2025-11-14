@@ -29,36 +29,34 @@ export function FeedbackStream() {
     }
   };
 
-  const getSeverityIcon = (severity: string) => {
-    switch (severity) {
+  const getUrgencyIcon = (urgency: string) => {
+    switch (urgency) {
       case 'critical':
         return '🔴';
-      case 'high':
+      case 'priority':
         return '🟠';
-      case 'medium':
-        return '🟡';
-      case 'low':
+      case 'general':
         return '🟢';
       default:
         return '⚪';
     }
   };
 
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case 'positive':
-        return 'text-green-600';
-      case 'negative':
-        return 'text-red-600';
-      default:
-        return 'text-gray-600';
-    }
+  const getSentimentColor = (sentiment: number) => {
+    if (sentiment > 0) return 'text-green-600';
+    if (sentiment < 0) return 'text-red-600';
+    return 'text-gray-600';
   };
 
-  const formatRelativeTime = (timestamp: string) => {
-    const date = new Date(timestamp);
+  const getSentimentLabel = (sentiment: number) => {
+    if (sentiment > 0) return 'positive';
+    if (sentiment < 0) return 'negative';
+    return 'neutral';
+  };
+
+  const formatRelativeTime = (timestamp: Date) => {
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const diff = now.getTime() - timestamp.getTime();
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
@@ -114,12 +112,12 @@ export function FeedbackStream() {
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
-                <span className="text-lg">{getSeverityIcon(item.analysis.severity)}</span>
+                <span className="text-lg">{getUrgencyIcon(item.urgency)}</span>
                 <Badge variant={getStatusColor(item.status)} size="sm">
                   {item.status}
                 </Badge>
-                <span className={`text-xs font-medium ${getSentimentColor(item.analysis.sentiment)}`}>
-                  {item.analysis.sentiment}
+                <span className={`text-xs font-medium ${getSentimentColor(item.sentiment)}`}>
+                  {getSentimentLabel(item.sentiment)}
                 </span>
                 {item.department && (
                   <span className="text-xs text-gray-600">
@@ -134,26 +132,18 @@ export function FeedbackStream() {
 
             {/* Content */}
             <p className={`text-sm text-gray-700 ${expandedId === item.id ? '' : 'line-clamp-2'}`}>
-              {item.text}
+              {item.content}
             </p>
 
-            {/* AI Summary (when expanded) */}
-            {expandedId === item.id && (
-              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                <div className="text-xs font-semibold text-blue-900 mb-1">AI Summary</div>
-                <p className="text-xs text-blue-800">{item.analysis.summary}</p>
-              </div>
-            )}
-
-            {/* Themes */}
-            {item.analysis.themes.length > 0 && (
+            {/* Tags */}
+            {item.tags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1">
-                {item.analysis.themes.map((theme, i) => (
+                {item.tags.map((tag, i) => (
                   <span
                     key={i}
                     className="text-xs px-2 py-1 bg-primary-50 text-primary-700 rounded-full"
                   >
-                    {theme}
+                    {tag.value}
                   </span>
                 ))}
               </div>
