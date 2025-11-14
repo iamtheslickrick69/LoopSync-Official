@@ -11,13 +11,29 @@ import { claudeService } from './services/claudeAPI';
 
 function App() {
   const { currentPortal } = usePortalStore();
-  const { claudeApiKey } = useSettingsStore();
+  const { claudeApiKey, setClaudeApiKey } = useSettingsStore();
 
   useEffect(() => {
-    // Initialize Claude API if key exists
-    if (claudeApiKey) {
+    // Check for API key from environment variables
+    const envApiKey = import.meta.env.VITE_CLAUDE_API_KEY;
+
+    console.log('🔑 API Key Debug:', {
+      envApiKey: envApiKey ? `${envApiKey.substring(0, 15)}...` : 'NOT FOUND',
+      storedApiKey: claudeApiKey ? `${claudeApiKey.substring(0, 15)}...` : 'NOT FOUND',
+      isInitialized: claudeService.isInitialized()
+    });
+
+    // If env key exists and no stored key, use env key
+    if (envApiKey && !claudeApiKey) {
+      console.log('✅ Initializing Claude API from environment variable');
+      setClaudeApiKey(envApiKey);
+      claudeService.initialize(envApiKey);
+    } else if (claudeApiKey) {
+      // Use stored key
       claudeService.initialize(claudeApiKey);
-      console.log('Claude API initialized');
+      console.log('✅ Claude API initialized from stored settings');
+    } else {
+      console.error('❌ No API key found! Please add VITE_CLAUDE_API_KEY to .env.local');
     }
 
     // Seed demo data if no feedback exists
@@ -25,7 +41,7 @@ function App() {
       console.log('No feedback data found, seeding demo data...');
       seedDemoData();
     }
-  }, [claudeApiKey]);
+  }, [claudeApiKey, setClaudeApiKey]);
 
   return (
     <div className="min-h-screen relative overflow-hidden">

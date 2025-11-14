@@ -66,17 +66,31 @@ export function ChatInterface() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    console.log('🚀 handleSend called');
+    if (!input.trim()) {
+      console.log('❌ Empty input, returning');
+      return;
+    }
 
     const userMessage = input.trim();
+    console.log('📝 User message:', userMessage);
     setInput('');
     setIsInitialState(false);
 
     // Add user message
     addMessage({ role: 'user', content: userMessage });
 
+    console.log('🔑 Checking API key...', {
+      hasApiKey: !!claudeApiKey,
+      isInitialized: claudeService.isInitialized(),
+      apiKeyPrefix: claudeApiKey ? claudeApiKey.substring(0, 15) : 'NONE'
+    });
+
     if (!claudeApiKey || !claudeService.isInitialized()) {
-      setError('Please set your Claude API key in settings');
+      const errorMsg = 'Please set your Claude API key in settings';
+      console.error('❌', errorMsg);
+      setError(errorMsg);
+      addMessage({ role: 'assistant', content: `⚠️ ${errorMsg}. Click the settings icon (⚙️) in the top right to add your API key.` });
       return;
     }
 
@@ -84,6 +98,8 @@ export function ChatInterface() {
     setError(null);
 
     try {
+      console.log('📤 Preparing to send message to Claude...');
+
       // Prepare conversation history for Claude (exclude draft messages, only user/assistant)
       const conversationHistory = messages
         .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -94,26 +110,34 @@ export function ChatInterface() {
 
       conversationHistory.push({ role: 'user' as const, content: userMessage });
 
+      console.log('📜 Conversation history:', conversationHistory.length, 'messages');
+
       let assistantResponse = '';
 
       // Send to Claude with streaming
+      console.log('🌐 Calling Claude API...');
       await claudeService.sendMessage(
         conversationHistory,
         (chunk) => {
           assistantResponse += chunk;
+          console.log('📨 Received chunk:', chunk.substring(0, 50) + '...');
         }
       );
+
+      console.log('✅ Claude API response complete:', assistantResponse.substring(0, 100) + '...');
 
       // Parse response for draft messages
       const parsed = parseDraftMessage(assistantResponse);
 
       // Add normal assistant message if there's text
       if (parsed.hasNormalText) {
+        console.log('💬 Adding normal message');
         addMessage({ role: 'assistant', content: parsed.hasNormalText });
       }
 
       // Add draft message if present
       if (parsed.draft && parsed.draftContent) {
+        console.log('📝 Adding draft message');
         addMessage({
           role: 'draft',
           content: parsed.draftContent,
@@ -122,10 +146,12 @@ export function ChatInterface() {
         });
       }
     } catch (error) {
-      setError(
-        error instanceof Error ? error.message : 'Failed to get response from Coro'
-      );
+      console.error('❌ Error in handleSend:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get response from Coro';
+      setError(errorMessage);
+      addMessage({ role: 'assistant', content: `❌ Error: ${errorMessage}` });
     } finally {
+      console.log('✅ handleSend complete');
       setTyping(false);
     }
   };
