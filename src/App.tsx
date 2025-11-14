@@ -4,28 +4,38 @@ import { TopNav } from './components/layout/TopNav';
 import { Background3D } from './components/layout/Background3D';
 import { EmployeePortal } from './components/employee/EmployeePortal';
 import { OwnerPortal } from './components/owner/OwnerPortal';
+import { LandingPage } from './components/LandingPage';
 
 function App() {
-  const { currentPortal } = usePortalStore();
+  const { currentPortal, showLandingPage } = usePortalStore();
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* 3D Background Elements */}
-      <Background3D />
-
-      {/* Top Navigation */}
-      <TopNav />
-
       {/* Main Content */}
-      <main className="relative">
-        <AnimatePresence mode="wait">
-          {currentPortal === 'employee' ? (
-            <EmployeePortal key="employee" />
-          ) : (
-            <OwnerPortal key="owner" />
-          )}
-        </AnimatePresence>
-      </main>
+      <AnimatePresence mode="wait">
+        {showLandingPage ? (
+          <LandingPage key="landing" />
+        ) : (
+          <>
+            {/* 3D Background Elements */}
+            <Background3D />
+
+            {/* Top Navigation */}
+            <TopNav />
+
+            {/* Portal Content */}
+            <main className="relative">
+              <AnimatePresence mode="wait">
+                {currentPortal === 'employee' ? (
+                  <EmployeePortal key="employee" />
+                ) : (
+                  <OwnerPortal key="owner" />
+                )}
+              </AnimatePresence>
+            </main>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useSettingsStore } from '../../store/portalStore';
 import { claudeService } from '../../services/claudeAPI';
 import { MessageBubble } from './MessageBubble';
 import { GlassCard } from '../shared/GlassCard';
+import { AIOrb } from '../shared/AIOrb';
 
 export function ChatInterface() {
   const [input, setInput] = useState('');
@@ -90,13 +91,16 @@ export function ChatInterface() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-12"
           >
-            <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-2xl">💬</span>
+            <div className="flex justify-center mb-6">
+              <AIOrb size="medium" />
             </div>
-            <p className="text-gray-600 text-lg">
-              Hi! I'm Coro, your trusted AI assistant.
+            <p className="text-gray-700 text-xl font-semibold mb-2">
+              Hi! I'm <span className="text-gradient-orb">Coro</span>
             </p>
-            <p className="text-gray-500 text-sm mt-2">
+            <p className="text-gray-600 text-base">
+              Your trusted AI assistant for workplace feedback and support.
+            </p>
+            <p className="text-gray-500 text-sm mt-3">
               Share your thoughts, concerns, or feedback with me anytime.
             </p>
           </motion.div>
@@ -110,17 +114,15 @@ export function ChatInterface() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-start gap-3"
+            className="flex items-center gap-3"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-sm">C</span>
+            <div className="flex-shrink-0">
+              <AIOrb size="small" isThinking />
             </div>
             <div className="glass rounded-2xl rounded-tl-sm px-4 py-3">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce animation-delay-100" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce animation-delay-200" />
-              </div>
+              <p className="text-sm text-gray-600">
+                Coro is thinking<span className="animate-pulse">...</span>
+              </p>
             </div>
           </motion.div>
         )}

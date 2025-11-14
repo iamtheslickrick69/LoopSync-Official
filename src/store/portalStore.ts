@@ -6,6 +6,9 @@ interface PortalStore extends PortalState {
   setPortal: (portal: PortalType) => void;
   togglePortal: () => void;
   setTransitioning: (isTransitioning: boolean) => void;
+  showLandingPage: boolean;
+  enterPortal: (portal: PortalType) => void;
+  returnToLanding: () => void;
 }
 
 export const usePortalStore = create<PortalStore>()(
@@ -13,8 +16,13 @@ export const usePortalStore = create<PortalStore>()(
     (set, get) => ({
       currentPortal: 'employee',
       isTransitioning: false,
+      showLandingPage: true,
 
       setPortal: (portal) => set({ currentPortal: portal }),
+
+      enterPortal: (portal) => set({ currentPortal: portal, showLandingPage: false }),
+
+      returnToLanding: () => set({ showLandingPage: true }),
 
       togglePortal: () => {
         const current = get().currentPortal;

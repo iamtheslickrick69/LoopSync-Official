@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Message } from '../../types/chat';
 import { formatRelativeTime } from '../../utils/formatters';
+import { AIOrb } from '../shared/AIOrb';
 
 interface MessageBubbleProps {
   message: Message;
@@ -18,17 +19,15 @@ export function MessageBubble({ message, delay = 0 }: MessageBubbleProps) {
       className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
     >
       {/* Avatar */}
-      <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-          isUser
-            ? 'bg-gradient-to-br from-gray-400 to-gray-500'
-            : 'bg-gradient-to-br from-primary-500 to-primary-600'
-        }`}
-      >
-        <span className="text-white text-sm font-medium">
-          {isUser ? 'You' : 'C'}
-        </span>
-      </div>
+      {isUser ? (
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-gray-400 to-gray-500">
+          <span className="text-white text-xs font-medium">You</span>
+        </div>
+      ) : (
+        <div className="flex-shrink-0 scale-50 origin-top-left">
+          <AIOrb size="small" />
+        </div>
+      )}
 
       {/* Message Content */}
       <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[70%]`}>
