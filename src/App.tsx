@@ -23,13 +23,18 @@ function App() {
       isInitialized: claudeService.isInitialized()
     });
 
-    // If env key exists and no stored key, use env key
-    if (envApiKey && !claudeApiKey) {
-      console.log('✅ Initializing Claude API from environment variable');
-      setClaudeApiKey(envApiKey);
+    // ALWAYS prefer environment variable if it exists (to override cached invalid keys)
+    if (envApiKey) {
+      // Check if env key differs from stored key
+      if (envApiKey !== claudeApiKey) {
+        console.log('✅ Updating to environment variable API key (overriding cached key)');
+        setClaudeApiKey(envApiKey);
+      } else {
+        console.log('✅ Using environment variable API key');
+      }
       claudeService.initialize(envApiKey);
     } else if (claudeApiKey) {
-      // Use stored key
+      // Fallback to stored key only if no env key exists
       claudeService.initialize(claudeApiKey);
       console.log('✅ Claude API initialized from stored settings');
     } else {
