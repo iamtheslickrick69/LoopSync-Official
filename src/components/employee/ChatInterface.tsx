@@ -1,17 +1,28 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Mic } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Send, Paperclip, Mic, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '../../store/chatStore';
 import { useSettingsStore } from '../../store/portalStore';
 import { claudeService } from '../../services/claudeAPI';
 import { MessageBubble } from './MessageBubble';
 import { GlassCard } from '../shared/GlassCard';
+import { Button } from '../shared/Button';
 
 export function ChatInterface() {
   const [input, setInput] = useState('');
   const [isInitialState, setIsInitialState] = useState(true);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { messages, isTyping, addMessage, setTyping, setError } = useChatStore();
+  const {
+    messages,
+    isTyping,
+    addMessage,
+    setTyping,
+    setError,
+    submitConversationAsFeedback,
+    isSubmittingFeedback,
+    clearMessages
+  } = useChatStore();
   const { claudeApiKey } = useSettingsStore();
 
   useEffect(() => {
@@ -80,6 +91,18 @@ export function ChatInterface() {
     }
   };
 
+  const handleSubmitFeedback = async () => {
+    const success = await submitConversationAsFeedback();
+    if (success) {
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        clearMessages();
+        setIsInitialState(true);
+      }, 2000);
+    }
+  };
+
   return (
     <GlassCard className="h-[600px] flex flex-col">
       {/* Messages Area */}
@@ -127,6 +150,46 @@ export function ChatInterface() {
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Submit as Feedback Button */}
+      <AnimatePresence>
+        {messages.length > 0 && !showSuccessMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="px-4 py-2 border-t border-gray-200/50"
+          >
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSubmitFeedback}
+              isLoading={isSubmittingFeedback}
+              className="w-full flex items-center justify-center gap-2"
+            >
+              <CheckCircle className="w-4 h-4" />
+              {isSubmittingFeedback ? 'Analyzing & Submitting...' : 'Submit as Feedback'}
+            </Button>
+          </motion.div>
+        )}
+
+        {/* Success Message */}
+        {showSuccessMessage && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="px-4 py-3 bg-green-50 border-t border-green-200"
+          >
+            <div className="flex items-center gap-2 text-green-700">
+              <CheckCircle className="w-5 h-5" />
+              <span className="text-sm font-medium">
+                Feedback submitted successfully! Leadership will review it soon.
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Input Area */}
       <div className="border-t border-gray-200/50 p-4">

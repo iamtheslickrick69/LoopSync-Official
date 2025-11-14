@@ -2,11 +2,24 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { GlassCard } from '../shared/GlassCard';
-import { cultureHealthScore } from '../../utils/mockData';
+import { analyticsService } from '../../services/analyticsService';
 
 export function CultureHealthCard() {
   const [animatedScore, setAnimatedScore] = useState(0);
-  const { current, previous, trend } = cultureHealthScore;
+  const [current, setCurrent] = useState(0);
+  const [previous, setPrevious] = useState(0);
+  const [trend, setTrend] = useState(0);
+
+  useEffect(() => {
+    // Load real analytics data
+    const analytics = analyticsService.generateDashboardAnalytics();
+    const score = analytics.cultureScore;
+
+    setCurrent(score);
+    setPrevious(Math.max(0, score - Math.floor(Math.random() * 10) + 5)); // Simulate previous
+    const calculatedTrend = previous > 0 ? ((score - previous) / previous) * 100 : 0;
+    setTrend(calculatedTrend);
+  }, []);
 
   useEffect(() => {
     // Animate the score counting up

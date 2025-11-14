@@ -1,12 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, AlertTriangle, TrendingUp, TrendingDown, Eye, Zap } from 'lucide-react';
+import { ChevronDown, AlertTriangle, TrendingUp, TrendingDown, Eye, Zap, RefreshCw } from 'lucide-react';
 import { GlassCard } from '../shared/GlassCard';
 import { Badge } from '../shared/Badge';
-import { aiInsights } from '../../utils/mockData';
+import { Button } from '../shared/Button';
+import { analyticsService } from '../../services/analyticsService';
+import { AIInsight } from '../../types/analytics';
 
 export function AIInsightsPanel() {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [insights, setInsights] = useState<AIInsight[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    loadInsights();
+  }, []);
+
+  const loadInsights = async () => {
+    setIsLoading(true);
+    try {
+      const generatedInsights = await analyticsService.generateAIInsights();
+      setInsights(generatedInsights.length > 0 ? generatedInsights : getPlaceholderInsights());
+    } catch (error) {
+      console.error('Failed to load insights:', error);
+      setInsights(getPlaceholderInsights());
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getPlaceholderInsights = (): AIInsight[] => {
+    const feedbackData = analyticsService.getFeedbackData();
+    if (feedbackData.length === 0) {
+      return [{
+        type: 'hidden',
+        title: 'No Feedback Data Yet',
+        description: 'Start collecting feedback to see AI-powered insights here. Add your Claude API key in Settings to enable real-time analysis.',
+        impact: 'low',
+        relatedFeedbackIds: []
+      }];
+    }
+
+    return [{
+      type: 'action-required',
+      title: 'Connect Claude API for AI Insights',
+      description: 'Add your Claude API key in Settings to unlock AI-powered insights that analyze patterns, risks, and trends in your feedback data.',
+      impact: 'medium',
+      relatedFeedbackIds: []
+    }];
+  };
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -55,15 +97,29 @@ export function AIInsightsPanel() {
 
   return (
     <GlassCard delay={0.2}>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        AI-Powered Insights
-      </h3>
-      <p className="text-sm text-gray-600 mb-6">
-        5-point daily digest powered by Coro AI
-      </p>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            AI-Powered Insights
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">
+            {insights.length > 0 ? `${insights.length}-point` : ''} daily digest powered by Coro AI
+          </p>
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={loadInsights}
+          isLoading={isLoading}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </Button>
+      </div>
 
       <div className="space-y-3">
-        {aiInsights.map((insight, index) => (
+        {insights.map((insight, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, x: -20 }}

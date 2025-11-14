@@ -1,19 +1,19 @@
 import { create } from 'zustand';
 import { Feedback, FeedbackFilters } from '../types/feedback';
-import { mockFeedback } from '../utils/mockData';
+import { analyticsService } from '../services/analyticsService';
+import { AnalyzedFeedback } from '../services/feedbackAnalysis';
 
 interface FeedbackStore {
-  feedback: Feedback[];
   filters: FeedbackFilters;
 
   setFilters: (filters: Partial<FeedbackFilters>) => void;
   clearFilters: () => void;
-  getFilteredFeedback: () => Feedback[];
-  updateFeedbackStatus: (id: string, status: Feedback['status']) => void;
+  getFilteredFeedback: () => AnalyzedFeedback[];
+  updateFeedbackStatus: (id: string, status: AnalyzedFeedback['status']) => void;
+  getAllFeedback: () => AnalyzedFeedback[];
 }
 
 export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
-  feedback: mockFeedback,
   filters: {},
 
   setFilters: (newFilters) => {
@@ -24,58 +24,56 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
 
   clearFilters: () => set({ filters: {} }),
 
+  getAllFeedback: () => {
+    return analyticsService.getFeedbackData();
+  },
+
   getFilteredFeedback: () => {
-    const { feedback, filters } = get();
-
-    let filtered = [...feedback];
-
-    // Filter by urgency
-    if (filters.urgency && filters.urgency.length > 0) {
-      filtered = filtered.filter((f) => filters.urgency!.includes(f.urgency));
-    }
+    const { filters } = get();
+    let feedback = analyticsService.getFeedbackData();
 
     // Filter by department
     if (filters.department && filters.department.length > 0) {
-      filtered = filtered.filter(
+      feedback = feedback.filter(
         (f) => f.department && filters.department!.includes(f.department)
       );
     }
 
     // Filter by status
     if (filters.status && filters.status.length > 0) {
-      filtered = filtered.filter((f) => filters.status!.includes(f.status));
+      feedback = feedback.filter((f) => filters.status!.includes(f.status));
     }
 
     // Filter by date range
     if (filters.dateRange) {
-      filtered = filtered.filter(
-        (f) =>
-          f.timestamp >= filters.dateRange!.start &&
-          f.timestamp <= filters.dateRange!.end
+      feedback = feedback.filter(
+        (f) => {
+          const timestamp = new Date(f.timestamp);
+          return timestamp >= filters.dateRange!.start &&
+            timestamp <= filters.dateRange!.end;
+        }
       );
     }
 
     // Filter by search query
     if (filters.searchQuery && filters.searchQuery.trim()) {
       const query = filters.searchQuery.toLowerCase();
-      filtered = filtered.filter(
+      feedback = feedback.filter(
         (f) =>
-          f.content.toLowerCase().includes(query) ||
-          f.tags.some((t) => t.value.toLowerCase().includes(query))
+          f.text.toLowerCase().includes(query) ||
+          f.analysis.themes.some((t) => t.toLowerCase().includes(query))
       );
     }
 
     // Sort by timestamp (newest first)
-    filtered.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    feedback.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-    return filtered;
+    return feedback;
   },
 
   updateFeedbackStatus: (id, status) => {
-    set((state) => ({
-      feedback: state.feedback.map((f) =>
-        f.id === id ? { ...f, status } : f
-      ),
-    }));
+    analyticsService.updateFeedbackStatus(id, status);
+    // Trigger re-render by updating filters (hacky but works with zustand)
+    set((state) => ({ filters: { ...state.filters } }));
   },
 }));

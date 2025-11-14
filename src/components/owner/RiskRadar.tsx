@@ -1,9 +1,50 @@
+import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GlassCard } from '../shared/GlassCard';
-import { riskIndicators } from '../../utils/mockData';
+import { analyticsService } from '../../services/analyticsService';
 
 export function RiskRadar() {
+  const [risks, setRisks] = useState<any[]>([]);
+
+  useEffect(() => {
+    const riskData = analyticsService.generateRiskRadar();
+
+    // Convert to array format for rendering
+    const riskArray = [
+      {
+        category: 'Retention Risk',
+        level: riskData.retention.severity,
+        metric: Math.min(100, riskData.retention.count * 15), // Scale for visualization
+        trend: riskData.retention.count > 3 ? 'up' : riskData.retention.count > 0 ? 'stable' : 'down',
+        description: riskData.retention.description
+      },
+      {
+        category: 'Legal Exposure',
+        level: riskData.legal.severity,
+        metric: Math.min(100, riskData.legal.count * 25),
+        trend: riskData.legal.count > 2 ? 'up' : riskData.legal.count > 0 ? 'stable' : 'down',
+        description: riskData.legal.description
+      },
+      {
+        category: 'Project Health',
+        level: riskData.project.severity,
+        metric: Math.min(100, riskData.project.count * 15),
+        trend: riskData.project.count > 3 ? 'up' : riskData.project.count > 0 ? 'stable' : 'down',
+        description: riskData.project.description
+      },
+      {
+        category: 'Culture Breakdown',
+        level: riskData.culture.severity,
+        metric: Math.min(100, riskData.culture.count * 20),
+        trend: riskData.culture.count > 2 ? 'up' : riskData.culture.count > 0 ? 'stable' : 'down',
+        description: riskData.culture.description
+      }
+    ];
+
+    setRisks(riskArray);
+  }, []);
+
   const getRiskColor = (level: string) => {
     switch (level) {
       case 'high':
@@ -44,7 +85,7 @@ export function RiskRadar() {
       </h3>
 
       <div className="grid grid-cols-1 gap-4">
-        {riskIndicators.map((risk, index) => (
+        {risks.map((risk, index) => (
           <motion.div
             key={risk.category}
             initial={{ opacity: 0, scale: 0.95 }}
