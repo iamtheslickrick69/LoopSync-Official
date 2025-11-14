@@ -1,30 +1,58 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Mic, CheckCircle, CheckSquare, Square } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Paperclip, Mic } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useChatStore } from '../../store/chatStore';
 import { useSettingsStore } from '../../store/portalStore';
+import { useFeedbackStore } from '../../store/feedbackStore';
 import { claudeService } from '../../services/claudeAPI';
 import { MessageBubble } from './MessageBubble';
+import { DraftMessageCard } from './DraftMessageCard';
 import { GlassCard } from '../shared/GlassCard';
-import { Button } from '../shared/Button';
+import { DraftMetadata } from '../../types/chat';
+import { Tag } from '../../types/feedback';
+
+// Helper function to parse draft messages from Coro's response
+function parseDraftMessage(response: string): { hasNormalText: string; draft: DraftMetadata | null; draftContent: string } {
+  const draftRegex = /<DRAFT_MESSAGE>([\s\S]*?)<\/DRAFT_MESSAGE>/;
+  const match = response.match(draftRegex);
+
+  if (!match) {
+    return { hasNormalText: response, draft: null, draftContent: '' };
+  }
+
+  const draftBlock = match[1];
+  const normalText = response.replace(match[0], '').trim();
+
+  // Parse privacy level
+  const privacyMatch = draftBlock.match(/<PRIVACY_LEVEL>(.*?)<\/PRIVACY_LEVEL>/);
+  const privacyLevel = (privacyMatch?.[1].trim() || 'anonymous') as 'anonymous' | 'group' | 'department' | 'identified';
+
+  // Parse urgency
+  const urgencyMatch = draftBlock.match(/<URGENCY>(.*?)<\/URGENCY>/);
+  const urgency = (urgencyMatch?.[1].trim() || 'general') as 'general' | 'priority' | 'critical';
+
+  // Parse tags
+  const tagsMatch = draftBlock.match(/<TAGS>(.*?)<\/TAGS>/);
+  const tagsStr = tagsMatch?.[1].trim() || '';
+  const tags = tagsStr.split(',').map(t => t.trim()).filter(t => t.length > 0);
+
+  // Parse content
+  const contentMatch = draftBlock.match(/<CONTENT>([\s\S]*?)<\/CONTENT>/);
+  const draftContent = contentMatch?.[1].trim() || '';
+
+  return {
+    hasNormalText: normalText,
+    draft: { privacyLevel, urgency, tags },
+    draftContent,
+  };
+}
 
 export function ChatInterface() {
   const [input, setInput] = useState('');
   const [isInitialState, setIsInitialState] = useState(true);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
-  const [selectionMode, setSelectionMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const {
-    messages,
-    isTyping,
-    addMessage,
-    setTyping,
-    setError,
-    submitConversationAsFeedback,
-    isSubmittingFeedback,
-    clearMessages
-  } = useChatStore();
+  const { messages, isTyping, addMessage, updateMessage, removeMessage, setTyping, setError } = useChatStore();
+  const { addFeedback } = useFeedbackStore();
   const { claudeApiKey } = useSettingsStore();
 
   useEffect(() => {
@@ -56,14 +84,15 @@ export function ChatInterface() {
     setError(null);
 
     try {
-      // Prepare conversation history for Claude
-      const conversationHistory = [
-        ...messages.map((m) => ({
+      // Prepare conversation history for Claude (exclude draft messages, only user/assistant)
+      const conversationHistory = messages
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .map((m) => ({
           role: m.role as 'user' | 'assistant',
           content: m.content,
-        })),
-        { role: 'user' as const, content: userMessage },
-      ];
+        }));
+
+      conversationHistory.push({ role: 'user' as const, content: userMessage });
 
       let assistantResponse = '';
 
@@ -75,8 +104,23 @@ export function ChatInterface() {
         }
       );
 
-      // Add assistant message
-      addMessage({ role: 'assistant', content: assistantResponse });
+      // Parse response for draft messages
+      const parsed = parseDraftMessage(assistantResponse);
+
+      // Add normal assistant message if there's text
+      if (parsed.hasNormalText) {
+        addMessage({ role: 'assistant', content: parsed.hasNormalText });
+      }
+
+      // Add draft message if present
+      if (parsed.draft && parsed.draftContent) {
+        addMessage({
+          role: 'draft',
+          content: parsed.draftContent,
+          draftMetadata: parsed.draft,
+          approved: false,
+        });
+      }
     } catch (error) {
       setError(
         error instanceof Error ? error.message : 'Failed to get response from Coro'
@@ -93,47 +137,48 @@ export function ChatInterface() {
     }
   };
 
-  const toggleMessageSelection = (messageId: string) => {
-    setSelectedMessageIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(messageId)) {
-        newSet.delete(messageId);
-      } else {
-        newSet.add(messageId);
-      }
-      return newSet;
+  const handleApproveDraft = async (messageId: string) => {
+    const draftMessage = messages.find(m => m.id === messageId);
+    if (!draftMessage || !draftMessage.draftMetadata) return;
+
+    // Convert tags array to Tag objects
+    const feedbackTags: Tag[] = draftMessage.draftMetadata.tags.map(tag => ({
+      type: 'topic' as const,
+      value: tag,
+    }));
+
+    // Determine sentiment based on urgency (simple heuristic)
+    const sentiment = draftMessage.draftMetadata.urgency === 'critical' ? -1 :
+                      draftMessage.draftMetadata.urgency === 'priority' ? -0.5 : 0;
+
+    // Submit to feedback store
+    addFeedback({
+      privacyLevel: draftMessage.draftMetadata.privacyLevel,
+      urgency: draftMessage.draftMetadata.urgency,
+      content: draftMessage.content,
+      sentiment: sentiment as -1 | -0.5 | 0 | 0.5 | 1,
+      tags: feedbackTags,
+      status: 'unread',
+    });
+
+    // Mark as approved and add confirmation message
+    updateMessage(messageId, { approved: true });
+    addMessage({
+      role: 'assistant',
+      content: '✅ Your message has been successfully submitted to the leadership dashboard. They will review it and may respond if needed. Is there anything else I can help you with?',
     });
   };
 
-  const toggleSelectionMode = () => {
-    if (selectionMode) {
-      // Exiting selection mode
-      setSelectedMessageIds(new Set());
-    }
-    setSelectionMode(!selectionMode);
+  const handleRejectDraft = (messageId: string) => {
+    removeMessage(messageId);
+    addMessage({
+      role: 'assistant',
+      content: 'No problem! The draft has been discarded. Would you like me to help you with something else?',
+    });
   };
 
-  const handleSubmitFeedback = async () => {
-    let messagesToSubmit: string[] | undefined;
-
-    if (selectionMode && selectedMessageIds.size > 0) {
-      // Submit only selected messages
-      messagesToSubmit = messages
-        .filter(m => m.role === 'user' && selectedMessageIds.has(m.id))
-        .map(m => m.id);
-    }
-
-    const success = await submitConversationAsFeedback(messagesToSubmit);
-    if (success) {
-      setShowSuccessMessage(true);
-      setSelectionMode(false);
-      setSelectedMessageIds(new Set());
-      setTimeout(() => {
-        setShowSuccessMessage(false);
-        clearMessages();
-        setIsInitialState(true);
-      }, 2000);
-    }
+  const handleEditDraft = (messageId: string, newContent: string) => {
+    updateMessage(messageId, { content: newContent });
   };
 
   return (
@@ -158,25 +203,28 @@ export function ChatInterface() {
           </motion.div>
         )}
 
-        {messages.map((message, index) => (
-          <div key={message.id} className="flex items-start gap-2">
-            {selectionMode && message.role === 'user' && (
-              <button
-                onClick={() => toggleMessageSelection(message.id)}
-                className="mt-2 p-1 hover:bg-white/50 rounded transition-colors"
-              >
-                {selectedMessageIds.has(message.id) ? (
-                  <CheckSquare className="w-5 h-5 text-primary-600" />
-                ) : (
-                  <Square className="w-5 h-5 text-gray-400" />
-                )}
-              </button>
-            )}
-            <div className="flex-1">
-              <MessageBubble message={message} delay={index * 0.05} />
-            </div>
-          </div>
-        ))}
+        {messages.map((message, index) => {
+          if (message.role === 'draft' && !message.approved) {
+            return (
+              <DraftMessageCard
+                key={message.id}
+                message={message}
+                onApprove={handleApproveDraft}
+                onReject={handleRejectDraft}
+                onEdit={handleEditDraft}
+              />
+            );
+          }
+
+          // Don't show approved drafts as regular messages
+          if (message.role === 'draft' && message.approved) {
+            return null;
+          }
+
+          return (
+            <MessageBubble key={message.id} message={message} delay={index * 0.05} />
+          );
+        })}
 
         {isTyping && (
           <motion.div
@@ -199,89 +247,6 @@ export function ChatInterface() {
 
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Submit as Feedback Button */}
-      <AnimatePresence>
-        {messages.length > 0 && !showSuccessMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="px-4 py-3 border-t border-gray-200/50 space-y-2"
-          >
-            {/* Selection Mode Info */}
-            {selectionMode && (
-              <div className="text-sm text-gray-600 text-center">
-                {selectedMessageIds.size > 0 ? (
-                  <span className="font-medium text-primary-600">
-                    {selectedMessageIds.size} message{selectedMessageIds.size !== 1 ? 's' : ''} selected
-                  </span>
-                ) : (
-                  'Select messages above to submit as feedback'
-                )}
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              {/* Toggle Selection Mode */}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={toggleSelectionMode}
-                className="flex items-center justify-center gap-2"
-              >
-                {selectionMode ? (
-                  <>
-                    <Square className="w-4 h-4" />
-                    Cancel
-                  </>
-                ) : (
-                  <>
-                    <CheckSquare className="w-4 h-4" />
-                    Select
-                  </>
-                )}
-              </Button>
-
-              {/* Submit Button */}
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleSubmitFeedback}
-                isLoading={isSubmittingFeedback}
-                disabled={selectionMode && selectedMessageIds.size === 0}
-                className="flex-1 flex items-center justify-center gap-2"
-              >
-                <CheckCircle className="w-4 h-4" />
-                {isSubmittingFeedback
-                  ? 'Analyzing & Submitting...'
-                  : selectionMode
-                    ? `Submit Selected (${selectedMessageIds.size})`
-                    : 'Submit All as Feedback'
-                }
-              </Button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Success Message */}
-        {showSuccessMessage && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="px-4 py-3 bg-green-50 border-t border-green-200"
-          >
-            <div className="flex items-center gap-2 text-green-700">
-              <CheckCircle className="w-5 h-5" />
-              <span className="text-sm font-medium">
-                Feedback submitted successfully! Leadership will review it soon.
-              </span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Input Area */}
       <div className="border-t border-gray-200/50 p-4">

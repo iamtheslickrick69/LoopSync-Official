@@ -1,19 +1,20 @@
 import { create } from 'zustand';
-import { FeedbackFilters } from '../types/feedback';
-import { analyticsService } from '../services/analyticsService';
-import { AnalyzedFeedback } from '../services/feedbackAnalysis';
+import { Feedback, FeedbackFilters } from '../types/feedback';
+import { mockFeedback } from '../utils/mockData';
 
 interface FeedbackStore {
+  feedback: Feedback[];
   filters: FeedbackFilters;
 
   setFilters: (filters: Partial<FeedbackFilters>) => void;
   clearFilters: () => void;
-  getFilteredFeedback: () => AnalyzedFeedback[];
-  updateFeedbackStatus: (id: string, status: AnalyzedFeedback['status']) => void;
-  getAllFeedback: () => AnalyzedFeedback[];
+  getFilteredFeedback: () => Feedback[];
+  updateFeedbackStatus: (id: string, status: Feedback['status']) => void;
+  addFeedback: (feedback: Omit<Feedback, 'id' | 'timestamp'>) => void;
 }
 
 export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
+  feedback: mockFeedback,
   filters: {},
 
   setFilters: (newFilters) => {
@@ -24,56 +25,70 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
 
   clearFilters: () => set({ filters: {} }),
 
-  getAllFeedback: () => {
-    return analyticsService.getFeedbackData();
-  },
-
   getFilteredFeedback: () => {
-    const { filters } = get();
-    let feedback = analyticsService.getFeedbackData();
+    const { feedback, filters } = get();
+
+    let filtered = [...feedback];
+
+    // Filter by urgency
+    if (filters.urgency && filters.urgency.length > 0) {
+      filtered = filtered.filter((f) => filters.urgency!.includes(f.urgency));
+    }
 
     // Filter by department
     if (filters.department && filters.department.length > 0) {
-      feedback = feedback.filter(
+      filtered = filtered.filter(
         (f) => f.department && filters.department!.includes(f.department)
       );
     }
 
     // Filter by status
     if (filters.status && filters.status.length > 0) {
-      feedback = feedback.filter((f) => filters.status!.includes(f.status));
+      filtered = filtered.filter((f) => filters.status!.includes(f.status));
     }
 
     // Filter by date range
     if (filters.dateRange) {
-      feedback = feedback.filter(
-        (f) => {
-          const timestamp = new Date(f.timestamp);
-          return timestamp >= filters.dateRange!.start &&
-            timestamp <= filters.dateRange!.end;
-        }
+      filtered = filtered.filter(
+        (f) =>
+          f.timestamp >= filters.dateRange!.start &&
+          f.timestamp <= filters.dateRange!.end
       );
     }
 
     // Filter by search query
     if (filters.searchQuery && filters.searchQuery.trim()) {
       const query = filters.searchQuery.toLowerCase();
-      feedback = feedback.filter(
+      filtered = filtered.filter(
         (f) =>
-          f.text.toLowerCase().includes(query) ||
-          f.analysis.themes.some((t) => t.toLowerCase().includes(query))
+          f.content.toLowerCase().includes(query) ||
+          f.tags.some((t) => t.value.toLowerCase().includes(query))
       );
     }
 
     // Sort by timestamp (newest first)
-    feedback.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    filtered.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-    return feedback;
+    return filtered;
   },
 
   updateFeedbackStatus: (id, status) => {
-    analyticsService.updateFeedbackStatus(id, status);
-    // Trigger re-render by updating filters (hacky but works with zustand)
-    set((state) => ({ filters: { ...state.filters } }));
+    set((state) => ({
+      feedback: state.feedback.map((f) =>
+        f.id === id ? { ...f, status } : f
+      ),
+    }));
+  },
+
+  addFeedback: (feedbackData) => {
+    const newFeedback: Feedback = {
+      ...feedbackData,
+      id: `feedback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date(),
+    };
+
+    set((state) => ({
+      feedback: [newFeedback, ...state.feedback],
+    }));
   },
 }));
