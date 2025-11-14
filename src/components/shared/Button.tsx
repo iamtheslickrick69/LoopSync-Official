@@ -17,12 +17,12 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-full transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-full transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variantClasses = {
-    primary: 'bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-600 hover:to-primary-700 shadow-lg hover:shadow-xl',
-    secondary: 'glass text-primary-700 hover:bg-white/90',
-    ghost: 'text-primary-600 hover:bg-primary-50',
+    primary: 'bg-gradient-to-r from-primary-500 via-primary-600 to-accent-purple text-white hover:from-primary-600 hover:via-primary-700 hover:to-accent-purple shadow-glass hover:shadow-glass-lg',
+    secondary: 'glass text-primary-700 hover:bg-white/90 hover:shadow-glass-lg',
+    ghost: 'text-primary-600 hover:bg-primary-50/50',
   };
 
   const sizeClasses = {
